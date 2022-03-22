@@ -1,0 +1,24 @@
+{
+  "name": "com.quartzified.world.editor",
+  "version": "0.1.0",
+  "displayName": "Quartzified World Editor",
+  "description": "Custom Unity World Editor",
+  "unity": "2020.3",
+  "unityRelease": "20f1",
+  "documentationUrl": "",
+  "changelogUrl": "",
+  "licensesUrl": "",
+  "keywords": [
+    "Quartzified",
+    "Utility",
+    "Editor",
+    "World",
+    "Environment"
+  ],
+  "author": {
+    "name": "Quartzi",
+    "email": "virgil@quartzi.io",
+    "url": "https://www.quartzi.io"
+  },
+  "type": "tool"
+}
