@@ -25,5 +25,6 @@ namespace Quartzified.Editor.WorldEditor
 
             return style;
         }
+
     }
 }

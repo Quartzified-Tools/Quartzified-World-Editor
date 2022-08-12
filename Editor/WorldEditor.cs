@@ -12,39 +12,16 @@ namespace Quartzified.Editor.WorldEditor
         int modeSelect;
         int toolSelect;
 
+        List<GameObject> spawnObjects = new List<GameObject>();
+        int objCount;
+
+        public ScriptableObjectTool objectTool;
+        SerializedObject serializedObjectTool;
+
+        public ScriptableObjectTool foliageTool;
+        SerializedObject serializedFoliageTool;
+
         public FoliageToolVariables foliageVar;
-
-        [SerializeField]
-        public GameObject[] worldObjects;
-
-        public bool useLayer;
-        public int editLayerMask;
-        public bool useMaterials;
-        [SerializeField]
-        public Material[] editMaterials;
-
-        public float placementArea;
-
-        public bool randomObj;
-
-        public bool scatter;
-        public float scatterDistance;
-
-        public bool randomRotation;
-        public Vector3 randomRotValues;
-
-        public bool randomScale;
-        public bool randomScale3D;
-
-        public float scaleMin;
-        public float scaleMax;
-
-        public float scaleMinX;
-        public float scaleMaxX;
-        public float scaleMinY;
-        public float scaleMaxY;
-        public float scaleMinZ;
-        public float scaleMaxZ;
 
         float yOffset;
         int savedLayer;
@@ -78,7 +55,8 @@ namespace Quartzified.Editor.WorldEditor
             if (worldEditor == null)
                 worldEditor = this;
 
-            serializedWorldEditor = new SerializedObject(worldEditor);
+            if(serializedWorldEditor == null)
+                serializedWorldEditor = new SerializedObject(worldEditor);
         }
 
         //Window Code
@@ -95,11 +73,13 @@ namespace Quartzified.Editor.WorldEditor
                     break;
                 case 1:
                     ObjectToolWindow();
-                    Selection.activeObject = null;
+                    if(Selection.activeGameObject)
+                        Selection.activeObject = null;
                     break;
                 case 2:
                     FoliageToolWindow();
-                    Selection.activeObject = null;
+                    if (Selection.activeGameObject)
+                        Selection.activeObject = null;
                     break;
                 case 3:
                     EditToolWindow();
@@ -158,43 +138,46 @@ namespace Quartzified.Editor.WorldEditor
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Placement Area");
-            placementArea = EditorGUILayout.Slider(placementArea, 1, 16);
+            objectTool.placementArea = EditorGUILayout.Slider(objectTool.placementArea, 1, 16);
             GUILayout.EndHorizontal();
 
-            scatter = GUILayout.Toggle(scatter, "Scatter Objects");
-            if (scatter)
+            objectTool.scatter = GUILayout.Toggle(objectTool.scatter, "Scatter Objects");
+            if (objectTool.scatter)
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label("Scatter Distance");
-                scatterDistance = EditorGUILayout.FloatField(scatterDistance);
+                objectTool.scatterDistance = EditorGUILayout.FloatField(objectTool.scatterDistance);
                 GUILayout.EndHorizontal();
             }
 
             GUILayout.Space(8);
 
             EditorGUILayout.LabelField("Object Selection", StyleUtils.SectionStyle(), GUILayout.Height(22));
+            objCount = EditorGUILayout.IntField(objCount);
+            Mathf.Clamp(objCount, 0, int.MaxValue);
+            DrawCustomObjectList(objCount);
 
-            SerializedProperty serializedGameObjects = serializedWorldEditor.FindProperty("worldObjects");
-            EditorGUILayout.PropertyField(serializedGameObjects, true);
-            randomObj = GUILayout.Toggle(randomObj, "Choose Random Object");
+            GUILayout.Space(8);
+
+            objectTool.randomObj = GUILayout.Toggle(objectTool.randomObj, "Choose Random Object");
 
             GUILayout.Space(8);
 
             EditorGUILayout.LabelField("Inclusions / Exclusions", StyleUtils.SectionStyle(), GUILayout.Height(22));
 
             GUILayout.BeginHorizontal();
-            useLayer = GUILayout.Toggle(useLayer, "Use Layers");
-            if (useLayer)
+            objectTool.useLayer = GUILayout.Toggle(objectTool.useLayer, "Use Layers");
+            if (objectTool.useLayer)
             {
-                editLayerMask = EditorGUILayout.LayerField("", editLayerMask);
+                objectTool.editLayerMask = EditorGUILayout.LayerField("", objectTool.editLayerMask);
             }
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            useMaterials = GUILayout.Toggle(useMaterials, "Use Materials");
-            if (useMaterials)
+            objectTool.useMaterials = GUILayout.Toggle(objectTool.useMaterials, "Use Materials");
+            if (objectTool.useMaterials)
             {
-                SerializedProperty serializedMaterials = serializedWorldEditor.FindProperty("editMaterials");
+                SerializedProperty serializedMaterials = serializedObjectTool.FindProperty("editMaterials");
                 EditorGUILayout.PropertyField(serializedMaterials, true);
             }
             GUILayout.EndHorizontal();
@@ -203,59 +186,61 @@ namespace Quartzified.Editor.WorldEditor
 
             EditorGUILayout.LabelField("Object Manipulation", StyleUtils.SectionStyle(), GUILayout.Height(22));
 
-            randomRotation = GUILayout.Toggle(randomRotation, "Object Random Rotation");
-            if (randomRotation)
+            objectTool.randomRotation = GUILayout.Toggle(objectTool.randomRotation, "Object Random Rotation");
+            if (objectTool.randomRotation)
             {
                 GUILayout.BeginHorizontal();
-                randomRotValues = EditorGUILayout.Vector3Field("", randomRotValues);
+                objectTool.randomRotValues = EditorGUILayout.Vector3Field("", objectTool.randomRotValues);
                 GUILayout.EndHorizontal();
             }
 
-            if (!randomScale && !randomScale3D)
+            if (!objectTool.randomScale && !objectTool.randomScale3D)
             {
                 GUILayout.BeginHorizontal();
-                randomScale = GUILayout.Toggle(randomScale, "Object Random Scale (Solid)");
-                randomScale3D = GUILayout.Toggle(randomScale3D, "Object Random Scale (Specific)");
+                objectTool.randomScale = GUILayout.Toggle(objectTool.randomScale, "Object Random Scale (Solid)");
+                objectTool.randomScale3D = GUILayout.Toggle(objectTool.randomScale3D, "Object Random Scale (Specific)");
                 GUILayout.EndHorizontal();
             }
-            else if (randomScale)
+            else if (objectTool.randomScale)
             {
-                randomScale = GUILayout.Toggle(randomScale, "Object Random Scale (Solid)");
+                objectTool.randomScale = GUILayout.Toggle(objectTool.randomScale, "Object Random Scale (Solid)");
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Label("Random Scale");
-                scaleMin = EditorGUILayout.FloatField(scaleMin);
-                scaleMax = EditorGUILayout.FloatField(scaleMax);
+                objectTool.scaleRange.x = EditorGUILayout.FloatField(objectTool.scaleRange.x);
+                objectTool.scaleRange.y = EditorGUILayout.FloatField(objectTool.scaleRange.y);
 
                 GUILayout.EndHorizontal();
             }
-            else if (randomScale3D)
+            else if (objectTool.randomScale3D)
             {
-                randomScale3D = GUILayout.Toggle(randomScale3D, "Object Random Scale (Specific)");
+                objectTool.randomScale3D = GUILayout.Toggle(objectTool.randomScale3D, "Object Random Scale (Specific)");
 
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Label("Random Scale X");
-                scaleMinX = EditorGUILayout.FloatField(scaleMinX);
-                scaleMaxX = EditorGUILayout.FloatField(scaleMaxX);
+                objectTool.scaleXRange.x = EditorGUILayout.FloatField(objectTool.scaleXRange.x);
+                objectTool.scaleXRange.y = EditorGUILayout.FloatField(objectTool.scaleXRange.y);
 
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Label("Random Scale Y");
-                scaleMinY = EditorGUILayout.FloatField(scaleMinY);
-                scaleMaxY = EditorGUILayout.FloatField(scaleMaxY);
+                objectTool.scaleYRange.x = EditorGUILayout.FloatField(objectTool.scaleYRange.x);
+                objectTool.scaleYRange.y = EditorGUILayout.FloatField(objectTool.scaleYRange.y);
 
                 GUILayout.EndHorizontal();
 
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Label("Random Scale Z");
-                scaleMinZ = EditorGUILayout.FloatField(scaleMinZ);
-                scaleMaxZ = EditorGUILayout.FloatField(scaleMaxZ);
+                objectTool.scaleZRange.x = EditorGUILayout.FloatField(objectTool.scaleZRange.x);
+                objectTool.scaleZRange.x = EditorGUILayout.FloatField(objectTool.scaleZRange.x);
 
                 GUILayout.EndHorizontal();
+
+                
             }
 
             GUILayout.Space(12);
@@ -439,9 +424,19 @@ namespace Quartzified.Editor.WorldEditor
 
             SceneView.duringSceneGui += OnSceneGUI;
 
-            //Loading
-            string data = EditorPrefs.GetString("WorldEditor", JsonUtility.ToJson(this, false));
-            JsonUtility.FromJsonOverwrite(data, this);
+            objectTool = Utils.GetToolObject("ObjectTool");
+            if(objectTool == null)
+            {
+                objectTool = Utils.CreateToolObject("ObjectTool");
+            }
+            serializedObjectTool = new SerializedObject(objectTool);
+
+            foliageTool = Utils.GetToolObject("FoliageTool");
+            if (foliageTool == null)
+            {
+                foliageTool = Utils.CreateToolObject("FoliageTool");
+            }
+            serializedFoliageTool = new SerializedObject(foliageTool);
         }
 
         private void OnDisable()
@@ -452,9 +447,6 @@ namespace Quartzified.Editor.WorldEditor
 
             //Clearing
             foliageVar.foliagePlaced.Clear();
-
-            string data = JsonUtility.ToJson(this, false);
-            EditorPrefs.SetString("WorldEditor", data);
         }
 
         private void OnDestroy()
@@ -503,14 +495,14 @@ namespace Quartzified.Editor.WorldEditor
                 switch (toolSelect)
                 {
                     case 1:
-                        if (worldObjects.Length > 0)
+                        if (objectTool.spawnObjects.Length > 0)
                         {
-                            float t = 2f * Mathf.PI * Random.Range(0f, placementArea);
-                            float u = Random.Range(0f, placementArea) + Random.Range(0f, placementArea);
+                            float t = 2f * Mathf.PI * Random.Range(0f, objectTool.placementArea);
+                            float u = Random.Range(0f, objectTool.placementArea) + Random.Range(0f, objectTool.placementArea);
                             float r = (u > 1 ? 2 - u : u);
                             Vector3 origin = Vector3.zero;
 
-                            if (placementArea != 1)
+                            if (objectTool.placementArea != 1)
                             {
                                 origin.x += r * Mathf.Cos(t);
                                 origin.y += r * Mathf.Sin(t);
@@ -525,10 +517,10 @@ namespace Quartzified.Editor.WorldEditor
 
                             RaycastHit hit;
 
-                            if (useLayer)
+                            if (objectTool.useLayer)
                             {
                                 Debug.Log("Use Layer");
-                                if (Physics.Raycast(ray, out hit, 200f, 1 << editLayerMask))
+                                if (Physics.Raycast(ray, out hit, 200f, 1 << objectTool.editLayerMask))
                                 {
                                     Debug.Log("Raycast");
                                     if (CheckUseMaterialObject(hit))
@@ -562,7 +554,7 @@ namespace Quartzified.Editor.WorldEditor
                         RaycastHit hitObj;
                         if (Physics.Raycast(rayRemove, out hitObj, 200f))
                         {
-                            foreach (GameObject obj in worldObjects)
+                            foreach (GameObject obj in objectTool.spawnObjects)
                             {
                                 if (hitObj.transform.name.Equals(obj.name))
                                 {
@@ -593,19 +585,19 @@ namespace Quartzified.Editor.WorldEditor
             {
                 if (e.type == EventType.MouseDrag && e.button == 0 && toolSelect == 1)
                 {
-                    if (scatter)
+                    if (objectTool.scatter)
                     {
                         Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
 
                         RaycastHit hit;
 
-                        if (useLayer)
+                        if (objectTool.useLayer)
                         {
-                            if (Physics.Raycast(ray, out hit, 200f, 1 << editLayerMask))
+                            if (Physics.Raycast(ray, out hit, 200f, 1 << objectTool.editLayerMask))
                             {
                                 scatterPos = hit.point;
 
-                                if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= scatterDistance)
+                                if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
                                 {
                                     if (CheckUseMaterialObject(hit))
                                     {
@@ -619,7 +611,7 @@ namespace Quartzified.Editor.WorldEditor
                         {
                             scatterPos = hit.point;
 
-                            if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= scatterDistance)
+                            if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
                             {
                                 if (CheckUseMaterialObject(hit))
                                 {
@@ -648,13 +640,13 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnObject(RaycastHit hit)
         {
-            GameObject go = worldObjects[0];
+            GameObject go = objectTool.spawnObjects[0];
 
             //Random Object
-            if (randomObj)
+            if (objectTool.randomObj)
             {
-                int rnd = Random.Range(0, worldObjects.Length);
-                go = worldObjects[rnd];
+                int rnd = Random.Range(0, objectTool.spawnObjects.Length);
+                go = objectTool.spawnObjects[rnd];
             }
 
             GameObject spawnedObj = PrefabUtility.InstantiatePrefab(go) as GameObject;
@@ -662,22 +654,22 @@ namespace Quartzified.Editor.WorldEditor
             Vector3 goRot = spawnedObj.transform.eulerAngles;
 
             //Random Rotation
-            if (randomRotation)
+            if (objectTool.randomRotation)
             {
-                goRot = new Vector3(Random.Range(0, randomRotValues.x), Random.Range(0, randomRotValues.y), Random.Range(0, randomRotValues.z));
+                goRot = new Vector3(Random.Range(0, objectTool.randomRotValues.x), Random.Range(0, objectTool.randomRotValues.y), Random.Range(0, objectTool.randomRotValues.z));
             }
 
             //Randon Scale
-            if (randomScale && !randomScale3D)
+            if (objectTool.randomScale && !objectTool.randomScale3D)
             {
-                float scale = Random.Range(scaleMin, scaleMax);
+                float scale = Random.Range(objectTool.scaleRange.x, objectTool.scaleRange.y);
                 spawnedObj.transform.localScale = new Vector3(scale, scale, scale);
             }
-            else if (!randomScale && randomScale3D)
+            else if (!objectTool.randomScale && objectTool.randomScale3D)
             {
-                float scaleX = Random.Range(scaleMinX, scaleMaxX);
-                float scaleY = Random.Range(scaleMinY, scaleMaxY);
-                float scaleZ = Random.Range(scaleMinZ, scaleMaxZ);
+                float scaleX = Random.Range(objectTool.scaleXRange.x, objectTool.scaleXRange.y);
+                float scaleY = Random.Range(objectTool.scaleYRange.x, objectTool.scaleYRange.y);
+                float scaleZ = Random.Range(objectTool.scaleZRange.x, objectTool.scaleZRange.y);
                 spawnedObj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
             }
 
@@ -686,6 +678,8 @@ namespace Quartzified.Editor.WorldEditor
 
             //Set Rotation
             spawnedObj.transform.rotation = Quaternion.Euler(goRot);
+
+            justAddedGameObject = spawnedObj;
 
             Undo.RegisterCreatedObjectUndo(spawnedObj, "WorldEditor: Spawn Object");
         }
@@ -841,9 +835,9 @@ namespace Quartzified.Editor.WorldEditor
             {
                 case 1:
                     Handles.color = Color.cyan;
-                    Handles.DrawWireDisc(hitPosGizmo, hitNormal, placementArea);
+                    Handles.DrawWireDisc(hitPosGizmo, hitNormal, objectTool.placementArea);
                     Handles.color = new Color(0, 1, 1, 0.1f);
-                    Handles.DrawSolidDisc(hitPosGizmo, hitNormal, placementArea);
+                    Handles.DrawSolidDisc(hitPosGizmo, hitNormal, objectTool.placementArea);
                     break;
                 case 2:
                     Handles.color = Color.red;
@@ -908,9 +902,9 @@ namespace Quartzified.Editor.WorldEditor
 
         bool CheckUseMaterialObject(RaycastHit hit)
         {
-            if (useMaterials)
+            if (objectTool.useMaterials)
             {
-                foreach (Material mat in editMaterials)
+                foreach (Material mat in objectTool.editMaterials)
                 {
                     Renderer renderer = hit.transform.GetComponent<Renderer>();
                     if (renderer != null)
@@ -945,6 +939,18 @@ namespace Quartzified.Editor.WorldEditor
             }
             else
                 return true;
+        }
+
+        void DrawCustomObjectList(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if(spawnObjects.Count <= i)
+                {
+                    spawnObjects.Add(null);
+                }
+                spawnObjects[i] = (GameObject)EditorGUILayout.ObjectField(spawnObjects[i], typeof(GameObject), true);
+            }
         }
     }
 }

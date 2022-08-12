@@ -1,9 +1,33 @@
+using UnityEditor;
 using UnityEngine;
+using System.IO;
 
 namespace Quartzified.Editor.WorldEditor
 {
     public static class Utils
     {
+        static string ToolObjectPath(string name) => "Assets/Editor/WorldEditor/" + name;
+        static void CheckToolObjectPath()
+        {
+            if (!Directory.Exists("Assets/Editor/WorldEditor"))
+                Directory.CreateDirectory("Assets/Editor/WorldEditor");
+        }
+
+        public static ScriptableObjectTool GetToolObject(string toolName)
+        {
+            return (ScriptableObjectTool)AssetDatabase.LoadAssetAtPath(ToolObjectPath(toolName), typeof(ScriptableObjectTool));
+        }
+
+        public static ScriptableObjectTool CreateToolObject(string toolName)
+        {
+            CheckToolObjectPath();
+
+            ScriptableObjectTool tool = ScriptableObject.CreateInstance<ScriptableObjectTool>();
+            string path = ToolObjectPath(toolName) + ".asset";
+            AssetDatabase.CreateAsset(tool, path);
+            return tool;
+        }
+
         public static Bounds GetBoundsForGameObject(GameObject go)
         {
             Bounds bounds = new Bounds();
