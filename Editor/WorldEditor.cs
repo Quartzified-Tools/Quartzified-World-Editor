@@ -657,7 +657,9 @@ namespace Quartzified.Editor.WorldEditor
                 go = worldObjects[rnd];
             }
 
-            Vector3 goRot = go.transform.eulerAngles;
+            GameObject spawnedObj = PrefabUtility.InstantiatePrefab(go) as GameObject;
+
+            Vector3 goRot = spawnedObj.transform.eulerAngles;
 
             //Random Rotation
             if (randomRotation)
@@ -669,25 +671,23 @@ namespace Quartzified.Editor.WorldEditor
             if (randomScale && !randomScale3D)
             {
                 float scale = Random.Range(scaleMin, scaleMax);
-                go.transform.localScale = new Vector3(scale, scale, scale);
+                spawnedObj.transform.localScale = new Vector3(scale, scale, scale);
             }
             else if (!randomScale && randomScale3D)
             {
                 float scaleX = Random.Range(scaleMinX, scaleMaxX);
                 float scaleY = Random.Range(scaleMinY, scaleMaxY);
                 float scaleZ = Random.Range(scaleMinZ, scaleMaxZ);
-                go.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
+                spawnedObj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
             }
 
             //Set Position
-            go.transform.position = hit.point;
+            spawnedObj.transform.position = hit.point;
 
             //Set Rotation
-            go.transform.rotation = Quaternion.Euler(goRot);
+            spawnedObj.transform.rotation = Quaternion.Euler(goRot);
 
-            justAddedGameObject = PrefabUtility.InstantiatePrefab(go) as GameObject;
-
-            Undo.RegisterCreatedObjectUndo(justAddedGameObject, "WorldEditor: Spawn Object");
+            Undo.RegisterCreatedObjectUndo(spawnedObj, "WorldEditor: Spawn Object");
         }
 
         void FoliageTool(SceneView sceneView)
@@ -763,7 +763,9 @@ namespace Quartzified.Editor.WorldEditor
                 go = foliageVar.foliageObjects[rnd];
             }
 
-            Vector3 goRot = go.transform.eulerAngles;
+            GameObject spawnedObject = PrefabUtility.InstantiatePrefab(go) as GameObject;
+
+            Vector3 goRot = spawnedObject.transform.eulerAngles;
 
             //Random Rotation
             if (foliageVar.randomRotation)
@@ -775,7 +777,7 @@ namespace Quartzified.Editor.WorldEditor
             if (foliageVar.randomScale)
             {
                 float scale = Random.Range(foliageVar.scaleMin, foliageVar.scaleMax);
-                go.transform.localScale = new Vector3(scale, scale, scale);
+                spawnedObject.transform.localScale = new Vector3(scale, scale, scale);
             }
 
             Vector3 spawnPos = hit.point;
@@ -785,12 +787,12 @@ namespace Quartzified.Editor.WorldEditor
             }
 
             //Set Position
-            go.transform.position = spawnPos;
+            spawnedObject.transform.position = spawnPos;
 
             //Set Rotation
-            go.transform.rotation = Quaternion.Euler(goRot);
+            spawnedObject.transform.rotation = Quaternion.Euler(goRot);
 
-            foliageVar.justAddedFoliage = PrefabUtility.InstantiatePrefab(go) as GameObject;
+            foliageVar.justAddedFoliage = spawnedObject;
 
             if (foliageVar.foliagePlaced.Count > 0)
             {
