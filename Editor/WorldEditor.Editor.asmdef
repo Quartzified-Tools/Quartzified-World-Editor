@@ -1,5 +1,5 @@
 {
-    "name": "QuartzifiedWorld.Editor",
+    "name": "WorldEditor.Editor",
     "rootNamespace": "",
     "references": [],
     "includePlatforms": [
