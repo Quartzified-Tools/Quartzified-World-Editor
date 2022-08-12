@@ -3,6 +3,13 @@
 [Oo]bj/
 [Bb]uild/
 [Bb]uilds/
+[Ss]cenes/
+[Ss]cenes.meta
+[Pp]refabs/
+[Pp]refabs.meta
+[Tt]ests/
+[Tt]ests.meta
+
 Assets/AssetStoreTools*
 
 # Visual Studio cache directory
