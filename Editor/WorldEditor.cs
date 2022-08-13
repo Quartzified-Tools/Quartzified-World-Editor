@@ -962,7 +962,8 @@ namespace Quartzified.Editor.WorldEditor
 
                 // Create Int Field for List Size
                 objCount = EditorGUILayout.IntField(objCount, GUILayout.Width(32));
-                Mathf.Clamp(objCount, 1, int.MaxValue);
+                if (objCount < 1)
+                    objCount = 1;
 
                 EditorGUILayout.BeginVertical();
 
@@ -1019,7 +1020,8 @@ namespace Quartzified.Editor.WorldEditor
 
                 // Create Int Field for List Size
                 materialCount = EditorGUILayout.IntField(materialCount, GUILayout.Width(32));
-                Mathf.Clamp(materialCount, 1, int.MaxValue);
+                if (materialCount < 1)
+                    materialCount = 1;
 
                 EditorGUILayout.BeginVertical();
 
