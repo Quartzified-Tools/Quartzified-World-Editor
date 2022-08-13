@@ -23,10 +23,8 @@ namespace Quartzified.Editor.WorldEditor
         int materialCount = 1;
 
         public ScriptableObjectTool objectTool;
-        SerializedObject serializedObjectTool;
 
         public ScriptableObjectTool foliageTool;
-        SerializedObject serializedFoliageTool;
 
         public FoliageToolVariables foliageVar;
 
@@ -432,14 +430,12 @@ namespace Quartzified.Editor.WorldEditor
             {
                 objectTool = Utils.CreateToolObject("ObjectTool");
             }
-            serializedObjectTool = new SerializedObject(objectTool);
 
             foliageTool = Utils.GetToolObject("FoliageTool");
             if (foliageTool == null)
             {
                 foliageTool = Utils.CreateToolObject("FoliageTool");
             }
-            serializedFoliageTool = new SerializedObject(foliageTool);
         }
 
         private void OnDisable()
