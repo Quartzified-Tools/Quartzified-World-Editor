@@ -7,8 +7,6 @@ public class ScriptableObjectTool : ScriptableObject
     public float placementArea = 1;
 
     [Header("Object Settings")]
-    [SerializeField]
-    public GameObject[] spawnObjects;
     public bool randomObj = false;
 
     [Header("Layer Settings")]
@@ -17,7 +15,6 @@ public class ScriptableObjectTool : ScriptableObject
 
     [Header("Material Settings")]
     public bool useMaterials = false;
-    public Material[] editMaterials;
 
     [Header("Scatter Settings")]
     public bool scatter = false;
@@ -25,7 +22,7 @@ public class ScriptableObjectTool : ScriptableObject
 
     [Header("Rotation Options")]
     public bool randomRotation;
-    public Vector3 randomRotValues = Vector3.one;
+    public Vector3 randomRotValues = Vector3.zero;
 
     [Header("Scale Options")]
     public bool randomScale;

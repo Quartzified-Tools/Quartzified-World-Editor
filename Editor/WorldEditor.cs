@@ -12,8 +12,15 @@ namespace Quartzified.Editor.WorldEditor
         int modeSelect;
         int toolSelect;
 
+        bool showObjects;
+        GameObject spawnObject;
         List<GameObject> spawnObjects = new List<GameObject>();
-        int objCount;
+        int objCount = 1;
+
+        bool showMaterials;
+        Material editMaterial;
+        List<Material> editMaterials = new List<Material>();
+        int materialCount = 1;
 
         public ScriptableObjectTool objectTool;
         SerializedObject serializedObjectTool;
@@ -153,9 +160,8 @@ namespace Quartzified.Editor.WorldEditor
             GUILayout.Space(8);
 
             EditorGUILayout.LabelField("Object Selection", StyleUtils.SectionStyle(), GUILayout.Height(22));
-            objCount = EditorGUILayout.IntField(objCount);
-            Mathf.Clamp(objCount, 0, int.MaxValue);
-            DrawCustomObjectList(objCount);
+
+            DrawCustomGameObjectList(typeof(GameObject), "Spawn Objects");
 
             GUILayout.Space(8);
 
@@ -173,14 +179,11 @@ namespace Quartzified.Editor.WorldEditor
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
             objectTool.useMaterials = GUILayout.Toggle(objectTool.useMaterials, "Use Materials");
             if (objectTool.useMaterials)
             {
-                SerializedProperty serializedMaterials = serializedObjectTool.FindProperty("editMaterials");
-                EditorGUILayout.PropertyField(serializedMaterials, true);
+                DrawCustomMaterialList(typeof(Material), "Material Restictions");
             }
-            GUILayout.EndHorizontal();
 
             GUILayout.Space(8);
 
@@ -495,7 +498,7 @@ namespace Quartzified.Editor.WorldEditor
                 switch (toolSelect)
                 {
                     case 1:
-                        if (objectTool.spawnObjects.Length > 0)
+                        if (spawnObjects.Count > 0)
                         {
                             float t = 2f * Mathf.PI * Random.Range(0f, objectTool.placementArea);
                             float u = Random.Range(0f, objectTool.placementArea) + Random.Range(0f, objectTool.placementArea);
@@ -554,7 +557,7 @@ namespace Quartzified.Editor.WorldEditor
                         RaycastHit hitObj;
                         if (Physics.Raycast(rayRemove, out hitObj, 200f))
                         {
-                            foreach (GameObject obj in objectTool.spawnObjects)
+                            foreach (GameObject obj in spawnObjects)
                             {
                                 if (hitObj.transform.name.Equals(obj.name))
                                 {
@@ -640,13 +643,26 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnObject(RaycastHit hit)
         {
-            GameObject go = objectTool.spawnObjects[0];
+
+            if (spawnObjects.Count <= 0)
+            {
+                Debug.LogWarning("No Objects to spawn have been set!\nSpawning was Canceled.");
+                return;
+            }
+
+            GameObject go = spawnObjects[0];
 
             //Random Object
             if (objectTool.randomObj)
             {
-                int rnd = Random.Range(0, objectTool.spawnObjects.Length);
-                go = objectTool.spawnObjects[rnd];
+                int rnd = Random.Range(0, spawnObjects.Count + 1);
+                go = spawnObjects[rnd];
+            }
+
+            if (go == null)
+            {
+                Debug.LogWarning("Reference to an object is missing.\nSpawning was Canceled");
+                return;
             }
 
             GameObject spawnedObj = PrefabUtility.InstantiatePrefab(go) as GameObject;
@@ -677,7 +693,8 @@ namespace Quartzified.Editor.WorldEditor
             spawnedObj.transform.position = hit.point;
 
             //Set Rotation
-            spawnedObj.transform.rotation = Quaternion.Euler(goRot);
+            if(objectTool.randomRotation)
+                spawnedObj.transform.rotation = Quaternion.Euler(goRot) * spawnedObj.transform.rotation;
 
             justAddedGameObject = spawnedObj;
 
@@ -904,7 +921,7 @@ namespace Quartzified.Editor.WorldEditor
         {
             if (objectTool.useMaterials)
             {
-                foreach (Material mat in objectTool.editMaterials)
+                foreach (Material mat in editMaterials)
                 {
                     Renderer renderer = hit.transform.GetComponent<Renderer>();
                     if (renderer != null)
@@ -941,16 +958,121 @@ namespace Quartzified.Editor.WorldEditor
                 return true;
         }
 
-        void DrawCustomObjectList(int count)
+        void DrawCustomGameObjectList(System.Type type, string title = "Foldout")
         {
-            for (int i = 0; i < count; i++)
+            if (spawnObject != null)
             {
-                if(spawnObjects.Count <= i)
+                EditorGUILayout.BeginHorizontal();
+
+                // Create Int Field for List Size
+                objCount = EditorGUILayout.IntField(objCount, GUILayout.Width(32));
+                Mathf.Clamp(objCount, 1, int.MaxValue);
+
+                EditorGUILayout.BeginVertical();
+
+                // Create Foldout to organize List
+                showObjects = EditorGUILayout.Foldout(showObjects, title);
+
+                // If Foldout create necessary Object Field
+                if (showObjects)
                 {
-                    spawnObjects.Add(null);
+                    for (int i = 0; i < objCount; i++)
+                    {
+                        if (spawnObjects.Count <= i)
+                        {
+                            spawnObjects.Add(null);
+                        }
+
+                        if (i == 0)
+                        {
+                            spawnObject = (GameObject)EditorGUILayout.ObjectField(spawnObject, type, true);
+                            spawnObjects[i] = spawnObject;
+                        }
+                        else
+                        {
+                            spawnObjects[i] = (GameObject)EditorGUILayout.ObjectField(spawnObjects[i], type, true);
+                        }
+
+                    }
                 }
-                spawnObjects[i] = (GameObject)EditorGUILayout.ObjectField(spawnObjects[i], typeof(GameObject), true);
+
+                EditorGUILayout.EndVertical();
+
+                EditorGUILayout.EndHorizontal();
             }
+            else
+            {
+                EditorGUILayout.BeginHorizontal();
+                GUIStyle style = new GUIStyle();
+                style.padding = new RectOffset(8, 0, 0, 0);
+                style.richText = true;
+
+                EditorGUILayout.LabelField("<color=white>Spawn Object</color>", style, GUILayout.Width(92));
+                spawnObject = (GameObject)EditorGUILayout.ObjectField(spawnObject, type, true);
+                spawnObjects.Clear();
+                objCount = 1;
+
+                EditorGUILayout.EndHorizontal();
+            }
+        }
+        void DrawCustomMaterialList(System.Type type, string title = "Foldout")
+        {
+            if(editMaterial != null)
+            {
+                EditorGUILayout.BeginHorizontal();
+
+                // Create Int Field for List Size
+                materialCount = EditorGUILayout.IntField(materialCount, GUILayout.Width(32));
+                Mathf.Clamp(materialCount, 1, int.MaxValue);
+
+                EditorGUILayout.BeginVertical();
+
+                // Create Foldout to organize List
+                showMaterials = EditorGUILayout.Foldout(showMaterials, title);
+
+                // If Foldout create necessary Object Field
+                if (showMaterials)
+                {
+                    for (int i = 0; i < materialCount; i++)
+                    {
+                        if (editMaterials.Count <= i)
+                        {
+                            editMaterials.Add(null);
+                        }
+
+                        if(i == 0)
+                        {
+                            editMaterial = (Material)EditorGUILayout.ObjectField(editMaterial, type, true);
+                            editMaterials[i] = editMaterial;
+                        }
+                        else
+                        {
+                            editMaterials[i] = (Material)EditorGUILayout.ObjectField(editMaterials[i], type, true);
+                        }
+
+                    }
+                }
+
+                EditorGUILayout.EndVertical();
+
+                EditorGUILayout.EndHorizontal();
+            }
+            else
+            {
+                GUILayout.Space(4);
+                EditorGUILayout.BeginHorizontal();
+                GUIStyle style = new GUIStyle();
+                style.padding = new RectOffset(8, 0, 0, 0);
+                style.richText = true;
+
+                EditorGUILayout.LabelField("<color=white>Edit Material</color>", style, GUILayout.Width(82));
+                editMaterial = (Material)EditorGUILayout.ObjectField(editMaterial, type, true);
+                editMaterials.Clear();
+                materialCount = 1;
+
+                EditorGUILayout.EndHorizontal();
+            }
+
         }
     }
 }
