@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -20,6 +21,10 @@ public class ScriptableObjectTool : ScriptableObject
     public bool scatter = false;
     public float scatterDistance = 1;
 
+    [Header("Position Options")]
+    public bool posOffset;
+    public Vector3 posOffsetValues = Vector3.zero;
+
     [Header("Rotation Options")]
     public bool randomRotation;
     public Vector3 randomRotValues = Vector3.zero;
@@ -33,4 +38,14 @@ public class ScriptableObjectTool : ScriptableObject
     public Vector2 scaleXRange = Vector2.one;
     public Vector2 scaleYRange = Vector2.one;
     public Vector2 scaleZRange = Vector2.one;
+
+    [Space(12)]
+    [Header("Foliage Density")]
+    public bool halfExtent;
+    public bool quarterExtent;
+
+    [HideInInspector]
+    public List<GameObject> objectsPlaced = new List<GameObject>();
+    [HideInInspector]
+    public GameObject justPlacedObject;
 }

@@ -12,21 +12,20 @@ namespace Quartzified.Editor.WorldEditor
         int modeSelect;
         int toolSelect;
 
+        // Custom GameObject List
         bool showObjects;
         GameObject spawnObject;
         List<GameObject> spawnObjects = new List<GameObject>();
         int objCount = 1;
 
+        // Custom Material List
         bool showMaterials;
         Material editMaterial;
         List<Material> editMaterials = new List<Material>();
         int materialCount = 1;
 
         public ScriptableObjectTool objectTool;
-
         public ScriptableObjectTool foliageTool;
-
-        public FoliageToolVariables foliageVar;
 
         float yOffset;
         int savedLayer;
@@ -42,7 +41,6 @@ namespace Quartzified.Editor.WorldEditor
         Vector3 hitPosGizmo;
         Vector3 hitNormal;
 
-        GameObject justAddedGameObject;
         bool objectJustAdded;
 
         Vector3 scatterPos;
@@ -62,6 +60,18 @@ namespace Quartzified.Editor.WorldEditor
 
             if(serializedWorldEditor == null)
                 serializedWorldEditor = new SerializedObject(worldEditor);
+
+            objectTool = Utils.GetToolObject("ObjectTool");
+            if (objectTool == null)
+            {
+                objectTool = Utils.CreateToolObject("ObjectTool");
+            }
+
+            foliageTool = Utils.GetToolObject("FoliageTool");
+            if (foliageTool == null)
+            {
+                foliageTool = Utils.CreateToolObject("FoliageTool");
+            }
         }
 
         //Window Code
@@ -210,6 +220,7 @@ namespace Quartzified.Editor.WorldEditor
                 GUILayout.Label("Random Scale");
                 objectTool.scaleRange.x = EditorGUILayout.FloatField(objectTool.scaleRange.x);
                 objectTool.scaleRange.y = EditorGUILayout.FloatField(objectTool.scaleRange.y);
+                objectTool.randomScale3D = false;
 
                 GUILayout.EndHorizontal();
             }
@@ -241,7 +252,7 @@ namespace Quartzified.Editor.WorldEditor
 
                 GUILayout.EndHorizontal();
 
-                
+                objectTool.randomScale = false;
             }
 
             GUILayout.Space(12);
@@ -276,63 +287,58 @@ namespace Quartzified.Editor.WorldEditor
 
             GUILayout.BeginHorizontal();
             GUILayout.Label("Placement Area");
-            foliageVar.placementArea = EditorGUILayout.Slider(foliageVar.placementArea, 1, 16);
+            foliageTool.placementArea = EditorGUILayout.Slider(foliageTool.placementArea, 1, 16);
             GUILayout.EndHorizontal();
             GUILayout.Space(8);
 
             EditorGUILayout.LabelField("Object Selection", StyleUtils.SectionStyle(), GUILayout.Height(22));
 
-            SerializedProperty serializedGameObjects = serializedWorldEditor.FindProperty("foliageVar.foliageObjects");
-            EditorGUILayout.PropertyField(serializedGameObjects, true);
-            foliageVar.randomObj = GUILayout.Toggle(foliageVar.randomObj, "Choose Random Object");
+            DrawCustomGameObjectList(typeof(GameObject), "Spawn Objects");
 
             GUILayout.Space(8);
 
             EditorGUILayout.LabelField("Inclusions / Exclusions", StyleUtils.SectionStyle(), GUILayout.Height(22));
 
             GUILayout.BeginHorizontal();
-            foliageVar.useLayer = GUILayout.Toggle(foliageVar.useLayer, "Use Layers");
-            if (foliageVar.useLayer)
+            foliageTool.useLayer = GUILayout.Toggle(foliageTool.useLayer, "Use Layers");
+            if (foliageTool.useLayer)
             {
-                foliageVar.editLayerMask = EditorGUILayout.LayerField("", foliageVar.editLayerMask);
+                foliageTool.editLayerMask = EditorGUILayout.LayerField("", foliageTool.editLayerMask);
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
-            foliageVar.useMaterials = GUILayout.Toggle(foliageVar.useMaterials, "Use Materials");
-            if (foliageVar.useMaterials)
+            objectTool.useMaterials = GUILayout.Toggle(objectTool.useMaterials, "Use Materials");
+            if (objectTool.useMaterials)
             {
-                SerializedProperty serializedMaterials = serializedWorldEditor.FindProperty("foliageVar.editMaterials");
-                EditorGUILayout.PropertyField(serializedMaterials, true);
+                DrawCustomMaterialList(typeof(Material), "Material Restictions");
             }
-            GUILayout.EndHorizontal();
 
             GUILayout.Space(8);
 
-            foliageVar.posOffset = GUILayout.Toggle(foliageVar.posOffset, "Foliage Position Offset");
-            if (foliageVar.posOffset)
+            foliageTool.posOffset = GUILayout.Toggle(foliageTool.posOffset, "Foliage Position Offset");
+            if (foliageTool.posOffset)
             {
                 GUILayout.BeginHorizontal();
-                foliageVar.posOffsetValues = EditorGUILayout.Vector3Field("", foliageVar.posOffsetValues);
+                foliageTool.posOffsetValues = EditorGUILayout.Vector3Field("", foliageTool.posOffsetValues);
                 GUILayout.EndHorizontal();
             }
 
-            foliageVar.randomRotation = GUILayout.Toggle(foliageVar.randomRotation, "Foliage Random Rotation");
-            if (foliageVar.randomRotation)
+            foliageTool.randomRotation = GUILayout.Toggle(foliageTool.randomRotation, "Foliage Random Rotation");
+            if (foliageTool.randomRotation)
             {
                 GUILayout.BeginHorizontal();
-                foliageVar.randomRotValues = EditorGUILayout.Vector3Field("", foliageVar.randomRotValues);
+                foliageTool.randomRotValues = EditorGUILayout.Vector3Field("", foliageTool.randomRotValues);
                 GUILayout.EndHorizontal();
             }
 
-            foliageVar.randomScale = GUILayout.Toggle(foliageVar.randomScale, "Foliage Random Scale (Solid)");
-            if (foliageVar.randomScale)
+            foliageTool.randomScale = GUILayout.Toggle(foliageTool.randomScale, "Foliage Random Scale (Solid)");
+            if (foliageTool.randomScale)
             {
                 GUILayout.BeginHorizontal();
 
                 GUILayout.Label("Random Scale");
-                foliageVar.scaleMin = EditorGUILayout.FloatField(foliageVar.scaleMin);
-                foliageVar.scaleMax = EditorGUILayout.FloatField(foliageVar.scaleMax);
+                foliageTool.scaleRange.x = EditorGUILayout.FloatField(foliageTool.scaleRange.x);
+                foliageTool.scaleRange.y = EditorGUILayout.FloatField(foliageTool.scaleRange.y);
 
                 GUILayout.EndHorizontal();
             }
@@ -341,18 +347,18 @@ namespace Quartzified.Editor.WorldEditor
 
             GUILayout.BeginHorizontal();
 
-            if (foliageVar.halfExtent && !foliageVar.quarterExtent)
+            if (foliageTool.halfExtent && !foliageTool.quarterExtent)
             {
-                foliageVar.halfExtent = GUILayout.Toggle(foliageVar.halfExtent, "Half Extent");
+                foliageTool.halfExtent = GUILayout.Toggle(foliageTool.halfExtent, "Half Extent");
             }
-            else if (!foliageVar.halfExtent && foliageVar.quarterExtent)
+            else if (!foliageTool.halfExtent && foliageTool.quarterExtent)
             {
-                foliageVar.quarterExtent = GUILayout.Toggle(foliageVar.quarterExtent, "Quarter Extent");
+                foliageTool.quarterExtent = GUILayout.Toggle(foliageTool.quarterExtent, "Quarter Extent");
             }
             else
             {
-                foliageVar.halfExtent = GUILayout.Toggle(foliageVar.halfExtent, "Half Extent");
-                foliageVar.quarterExtent = GUILayout.Toggle(foliageVar.quarterExtent, "Quarter Extent");
+                foliageTool.halfExtent = GUILayout.Toggle(foliageTool.halfExtent, "Half Extent");
+                foliageTool.quarterExtent = GUILayout.Toggle(foliageTool.quarterExtent, "Quarter Extent");
             }
 
             GUILayout.EndHorizontal();
@@ -445,7 +451,7 @@ namespace Quartzified.Editor.WorldEditor
             toolSelect = -1;
 
             //Clearing
-            foliageVar.foliagePlaced.Clear();
+            //foliageVar.foliagePlaced.Clear();
         }
 
         private void OnDestroy()
@@ -496,23 +502,7 @@ namespace Quartzified.Editor.WorldEditor
                     case 1:
                         if (spawnObjects.Count > 0)
                         {
-                            float t = 2f * Mathf.PI * Random.Range(0f, objectTool.placementArea);
-                            float u = Random.Range(0f, objectTool.placementArea) + Random.Range(0f, objectTool.placementArea);
-                            float r = (u > 1 ? 2 - u : u);
-                            Vector3 origin = Vector3.zero;
-
-                            if (objectTool.placementArea != 1)
-                            {
-                                origin.x += r * Mathf.Cos(t);
-                                origin.y += r * Mathf.Sin(t);
-                            }
-                            else
-                            {
-                                origin = Vector3.zero;
-                            }
-
                             Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
-                            ray.origin += origin;
 
                             RaycastHit hit;
 
@@ -596,7 +586,7 @@ namespace Quartzified.Editor.WorldEditor
                             {
                                 scatterPos = hit.point;
 
-                                if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
+                                if (hit.transform.gameObject != objectTool.justPlacedObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
                                 {
                                     if (CheckUseMaterialObject(hit))
                                     {
@@ -610,7 +600,7 @@ namespace Quartzified.Editor.WorldEditor
                         {
                             scatterPos = hit.point;
 
-                            if (hit.transform.gameObject != justAddedGameObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
+                            if (hit.transform.gameObject != objectTool.justPlacedObject && Vector3.Distance(scatterPos, scatterPosOld) >= objectTool.scatterDistance)
                             {
                                 if (CheckUseMaterialObject(hit))
                                 {
@@ -625,7 +615,7 @@ namespace Quartzified.Editor.WorldEditor
                     {
                         Vector2 difference = e.mousePosition - oldMousePos;
 
-                        justAddedGameObject.transform.Rotate(justAddedGameObject.transform.up * difference.x);
+                        objectTool.justPlacedObject.transform.Rotate(objectTool.justPlacedObject.transform.up * difference.x);
 
                         oldMousePos = e.mousePosition;
                     }
@@ -639,60 +629,24 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnObject(RaycastHit hit)
         {
+            GameObject spawnedObj = EditObject.GetSpawnObject(objectTool, spawnObjects);
 
-            if (spawnObjects.Count <= 0)
-            {
-                Debug.LogWarning("No Objects to spawn have been set!\nSpawning was Canceled.");
-                return;
-            }
-
-            GameObject go = spawnObjects[0];
-
-            //Random Object
-            if (objectTool.randomObj)
-            {
-                int rnd = Random.Range(0, spawnObjects.Count + 1);
-                go = spawnObjects[rnd];
-            }
-
-            if (go == null)
+            if(spawnedObj == null)
             {
                 Debug.LogWarning("Reference to an object is missing.\nSpawning was Canceled");
                 return;
             }
 
-            GameObject spawnedObj = PrefabUtility.InstantiatePrefab(go) as GameObject;
+            // Set Position
+            EditObject.SetObjectPosition(objectTool, hit.point, spawnedObj);
 
-            Vector3 goRot = spawnedObj.transform.eulerAngles;
+            // Set Rotation
+            EditObject.SetObjectRotation(objectTool, spawnedObj);
 
-            //Random Rotation
-            if (objectTool.randomRotation)
-            {
-                goRot = new Vector3(Random.Range(0, objectTool.randomRotValues.x), Random.Range(0, objectTool.randomRotValues.y), Random.Range(0, objectTool.randomRotValues.z));
-            }
+            // Set Scale
+            EditObject.SetObjectScale(objectTool, spawnedObj);
 
-            //Randon Scale
-            if (objectTool.randomScale && !objectTool.randomScale3D)
-            {
-                float scale = Random.Range(objectTool.scaleRange.x, objectTool.scaleRange.y);
-                spawnedObj.transform.localScale = new Vector3(scale, scale, scale);
-            }
-            else if (!objectTool.randomScale && objectTool.randomScale3D)
-            {
-                float scaleX = Random.Range(objectTool.scaleXRange.x, objectTool.scaleXRange.y);
-                float scaleY = Random.Range(objectTool.scaleYRange.x, objectTool.scaleYRange.y);
-                float scaleZ = Random.Range(objectTool.scaleZRange.x, objectTool.scaleZRange.y);
-                spawnedObj.transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
-            }
-
-            //Set Position
-            spawnedObj.transform.position = hit.point;
-
-            //Set Rotation
-            if(objectTool.randomRotation)
-                spawnedObj.transform.rotation = Quaternion.Euler(goRot) * spawnedObj.transform.rotation;
-
-            justAddedGameObject = spawnedObj;
+            objectTool.justPlacedObject = spawnedObj;
 
             Undo.RegisterCreatedObjectUndo(spawnedObj, "WorldEditor: Spawn Object");
         }
@@ -706,14 +660,14 @@ namespace Quartzified.Editor.WorldEditor
                 switch (toolSelect)
                 {
                     case 11:
-                        if (foliageVar.foliageObjects.Length > 0)
+                        if (spawnObjects.Count > 0)
                         {
-                            float t = 2f * Mathf.PI * Random.Range(0f, foliageVar.placementArea);
-                            float u = Random.Range(0f, foliageVar.placementArea) + Random.Range(0f, foliageVar.placementArea);
+                            float t = 2f * Mathf.PI * Random.Range(0f, foliageTool.placementArea);
+                            float u = Random.Range(0f, foliageTool.placementArea) + Random.Range(0f, foliageTool.placementArea);
                             float r = (u > 1 ? 2 - u : u);
                             Vector3 origin = Vector3.zero;
 
-                            if (foliageVar.placementArea != 1)
+                            if (foliageTool.placementArea != 1)
                             {
                                 origin.x += r * Mathf.Cos(t);
                                 origin.y += r * Mathf.Sin(t);
@@ -728,15 +682,12 @@ namespace Quartzified.Editor.WorldEditor
 
                             RaycastHit hit;
 
-                            if (foliageVar.useLayer)
+                            if (foliageTool.useLayer)
                             {
-                                Debug.Log("Use Layer");
-                                if (Physics.Raycast(ray, out hit, 200f, 1 << foliageVar.editLayerMask))
+                                if (Physics.Raycast(ray, out hit, 200f, 1 << foliageTool.editLayerMask))
                                 {
-                                    Debug.Log("Raycast");
                                     if (CheckUseMaterialFoliage(hit))
                                     {
-                                        Debug.Log("Materials");
                                         SpawnFoliage(hit);
 
                                         oldMousePos = e.mousePosition;
@@ -761,73 +712,53 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnFoliage(RaycastHit hit)
         {
-            GameObject go = foliageVar.foliageObjects[0];
+            GameObject spawnedObj = EditObject.GetSpawnObject(foliageTool, spawnObjects);
 
-            //Random Object
-            if (foliageVar.randomObj)
+            if (spawnedObj == null)
             {
-                int rnd = Random.Range(0, foliageVar.foliageObjects.Length);
-                go = foliageVar.foliageObjects[rnd];
+                Debug.LogWarning("Reference to an object is missing.\nSpawning was Canceled");
+                return;
             }
 
-            GameObject spawnedObject = PrefabUtility.InstantiatePrefab(go) as GameObject;
+            // Set Position
+            EditObject.SetObjectPosition(foliageTool, hit.point, spawnedObj);
 
-            Vector3 goRot = spawnedObject.transform.eulerAngles;
+            // Set Rotation
+            EditObject.SetObjectRotation(foliageTool, spawnedObj);
 
-            //Random Rotation
-            if (foliageVar.randomRotation)
+            // Set Scale
+            EditObject.SetObjectScale(foliageTool, spawnedObj);
+
+
+            foliageTool.justPlacedObject = spawnedObj;
+
+            if (foliageTool.objectsPlaced.Count > 0)
             {
-                goRot = new Vector3(Random.Range(0, foliageVar.randomRotValues.x), Random.Range(0, foliageVar.randomRotValues.y), Random.Range(0, foliageVar.randomRotValues.z));
-            }
-
-            //Randon Scale
-            if (foliageVar.randomScale)
-            {
-                float scale = Random.Range(foliageVar.scaleMin, foliageVar.scaleMax);
-                spawnedObject.transform.localScale = new Vector3(scale, scale, scale);
-            }
-
-            Vector3 spawnPos = hit.point;
-            if (foliageVar.posOffset)
-            {
-                spawnPos += foliageVar.posOffsetValues;
-            }
-
-            //Set Position
-            spawnedObject.transform.position = spawnPos;
-
-            //Set Rotation
-            spawnedObject.transform.rotation = Quaternion.Euler(goRot);
-
-            foliageVar.justAddedFoliage = spawnedObject;
-
-            if (foliageVar.foliagePlaced.Count > 0)
-            {
-                foreach (GameObject foliage in foliageVar.foliagePlaced)
+                foreach (GameObject foliage in foliageTool.objectsPlaced)
                 {
-                    if (foliage != null && foliageVar.justAddedFoliage != null)
+                    if (foliage != null && foliageTool.justPlacedObject != null)
                     {
-                        if (foliageVar.halfExtent)
+                        if (foliageTool.halfExtent)
                         {
-                            if (Utils.GetHalfBoundsForGameObject(foliage).Intersects(Utils.GetBoundsForGameObject(foliageVar.justAddedFoliage)))
+                            if (Utils.GetHalfBoundsForGameObject(foliage).Intersects(Utils.GetBoundsForGameObject(foliageTool.justPlacedObject)))
                             {
-                                DestroyImmediate(foliageVar.justAddedFoliage);
+                                DestroyImmediate(foliageTool.justPlacedObject);
                                 return;
                             }
                         }
-                        else if (foliageVar.quarterExtent)
+                        else if (foliageTool.quarterExtent)
                         {
-                            if (Utils.GetHalfBoundsForGameObject(foliage).Intersects(Utils.GetHalfBoundsForGameObject(foliageVar.justAddedFoliage)))
+                            if (Utils.GetHalfBoundsForGameObject(foliage).Intersects(Utils.GetHalfBoundsForGameObject(foliageTool.justPlacedObject)))
                             {
-                                DestroyImmediate(foliageVar.justAddedFoliage);
+                                DestroyImmediate(foliageTool.justPlacedObject);
                                 return;
                             }
                         }
                         else
                         {
-                            if (Utils.GetBoundsForGameObject(foliage).Intersects(Utils.GetBoundsForGameObject(foliageVar.justAddedFoliage)))
+                            if (Utils.GetBoundsForGameObject(foliage).Intersects(Utils.GetBoundsForGameObject(foliageTool.justPlacedObject)))
                             {
-                                DestroyImmediate(foliageVar.justAddedFoliage);
+                                DestroyImmediate(foliageTool.justPlacedObject);
                                 return;
                             }
                         }
@@ -835,10 +766,10 @@ namespace Quartzified.Editor.WorldEditor
                 }
             }
 
-            if (foliageVar.justAddedFoliage != null)
+            if (foliageTool.justPlacedObject != null)
             {
-                foliageVar.foliagePlaced.Add(foliageVar.justAddedFoliage);
-                Undo.RegisterCreatedObjectUndo(foliageVar.justAddedFoliage, "WorldEditor: Spawn Foliage");
+                foliageTool.objectsPlaced.Add(foliageTool.justPlacedObject);
+                Undo.RegisterCreatedObjectUndo(foliageTool.justPlacedObject, "WorldEditor: Spawn Foliage");
             }
         }
 
@@ -861,9 +792,9 @@ namespace Quartzified.Editor.WorldEditor
 
                 case 11:
                     Handles.color = Color.cyan;
-                    Handles.DrawWireDisc(hitPosGizmo, hitNormal, foliageVar.placementArea);
+                    Handles.DrawWireDisc(hitPosGizmo, hitNormal, foliageTool.placementArea);
                     Handles.color = new Color(0, 1, 1, 0.1f);
-                    Handles.DrawSolidDisc(hitPosGizmo, hitNormal, foliageVar.placementArea);
+                    Handles.DrawSolidDisc(hitPosGizmo, hitNormal, foliageTool.placementArea);
                     break;
             }
         }
@@ -936,9 +867,9 @@ namespace Quartzified.Editor.WorldEditor
 
         bool CheckUseMaterialFoliage(RaycastHit hit)
         {
-            if (foliageVar.useMaterials)
+            if (foliageTool.useMaterials)
             {
-                foreach (Material mat in foliageVar.editMaterials)
+                foreach (Material mat in editMaterials)
                 {
                     Renderer renderer = hit.transform.GetComponent<Renderer>();
                     if (renderer != null)

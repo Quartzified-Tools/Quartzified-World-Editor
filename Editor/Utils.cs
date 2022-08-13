@@ -6,7 +6,7 @@ namespace Quartzified.Editor.WorldEditor
 {
     public static class Utils
     {
-        static string ToolObjectPath(string name) => "Assets/Editor/WorldEditor/" + name;
+        static string ToolObjectPath(string name) => "Assets/Editor/WorldEditor/" + name + ".asset";
         static void CheckToolObjectPath()
         {
             if (!Directory.Exists("Assets/Editor/WorldEditor"))
@@ -23,7 +23,7 @@ namespace Quartzified.Editor.WorldEditor
             CheckToolObjectPath();
 
             ScriptableObjectTool tool = ScriptableObject.CreateInstance<ScriptableObjectTool>();
-            string path = ToolObjectPath(toolName) + ".asset";
+            string path = ToolObjectPath(toolName) ;
             AssetDatabase.CreateAsset(tool, path);
             return tool;
         }
