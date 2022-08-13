@@ -260,8 +260,7 @@ namespace Quartzified.Editor.WorldEditor
 
         void EditToolWindow()
         {
-            EditorGUILayout.LabelField("Edit Mode", StyleUtils.TitleStyle(), GUILayout.Height(28));
-            GUILayout.Space(24);
+            WindowParts.WindowTitle("Edit Mode", 12);
 
             GUILayout.BeginHorizontal();
 
@@ -326,14 +325,11 @@ namespace Quartzified.Editor.WorldEditor
             modeSelect = 0;
             toolSelect = -1;
 
-            //Clearing
-            //foliageVar.foliagePlaced.Clear();
+            objectTool?.objectsPlaced.Clear();
+            foliageTool?.objectsPlaced.Clear();
         }
 
-        private void OnDestroy()
-        {
-            SceneView.duringSceneGui -= OnSceneGUI;
-        }
+        private void OnDestroy() => SceneView.duringSceneGui -= OnSceneGUI;
 
         void OnSceneGUI(SceneView sceneView)
         {
