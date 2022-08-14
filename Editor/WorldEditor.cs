@@ -24,14 +24,13 @@ namespace Quartzified.Editor.WorldEditor
         List<Material> editMaterials = new List<Material>();
         int materialCount = 1;
 
-        public ScriptableObjectTool objectTool;
-        public ScriptableObjectTool foliageTool;
+        ScriptableObjectTool objectTool;
+        ScriptableObjectTool foliageTool;
+        ScriptableSpawnables customSpawnables;
 
         float yOffset;
         int savedLayer;
         bool alignNormals;
-
-        RaycastHit hit;
 
         Vector3 upVector = new Vector3(0, 90, 0);
 
@@ -372,34 +371,18 @@ namespace Quartzified.Editor.WorldEditor
                 switch (toolSelect)
                 {
                     case 1:
-                        if (spawnObjects.Count > 0)
+                        Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
+                        RaycastHit hit;
+
+                        if (objectTool.useLayer)
                         {
-                            Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
-
-                            RaycastHit hit;
-
-                            if (objectTool.useLayer)
+                            Debug.Log("Use Layer");
+                            if (Physics.Raycast(ray, out hit, 200f, 1 << objectTool.editLayerMask))
                             {
-                                Debug.Log("Use Layer");
-                                if (Physics.Raycast(ray, out hit, 200f, 1 << objectTool.editLayerMask))
-                                {
-                                    Debug.Log("Raycast");
-                                    if (CheckUseMaterial(objectTool, hit))
-                                    {
-                                        Debug.Log("Materials");
-                                        SpawnObject(hit);
-
-                                        objectJustAdded = true;
-                                        oldMousePos = e.mousePosition;
-
-                                        scatterPosOld = hit.point;
-                                    }
-                                }
-                            }
-                            else if (Physics.Raycast(ray, out hit, 200f))
-                            {
+                                Debug.Log("Raycast");
                                 if (CheckUseMaterial(objectTool, hit))
                                 {
+                                    Debug.Log("Materials");
                                     SpawnObject(hit);
 
                                     objectJustAdded = true;
@@ -407,6 +390,18 @@ namespace Quartzified.Editor.WorldEditor
 
                                     scatterPosOld = hit.point;
                                 }
+                            }
+                        }
+                        else if (Physics.Raycast(ray, out hit, 200f))
+                        {
+                            if (CheckUseMaterial(objectTool, hit))
+                            {
+                                SpawnObject(hit);
+
+                                objectJustAdded = true;
+                                oldMousePos = e.mousePosition;
+
+                                scatterPosOld = hit.point;
                             }
                         }
                         break;
@@ -501,7 +496,7 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnObject(RaycastHit hit)
         {
-            GameObject spawnedObj = EditObject.GetSpawnObject(objectTool, spawnObjects);
+            GameObject spawnedObj = customSpawnables != null ? customSpawnables.GetSpawnable(objectTool.randomObj) : EditObject.GetSpawnObject(objectTool, spawnObjects);
 
             if(spawnedObj == null)
             {
@@ -532,41 +527,29 @@ namespace Quartzified.Editor.WorldEditor
                 switch (toolSelect)
                 {
                     case 11:
-                        if (spawnObjects.Count > 0)
+                        float t = 2f * Mathf.PI * Random.Range(0f, foliageTool.placementArea);
+                        float u = Random.Range(0f, foliageTool.placementArea) + Random.Range(0f, foliageTool.placementArea);
+                        float r = (u > 1 ? 2 - u : u);
+                        Vector3 origin = Vector3.zero;
+
+                        if (foliageTool.placementArea != 1)
                         {
-                            float t = 2f * Mathf.PI * Random.Range(0f, foliageTool.placementArea);
-                            float u = Random.Range(0f, foliageTool.placementArea) + Random.Range(0f, foliageTool.placementArea);
-                            float r = (u > 1 ? 2 - u : u);
-                            Vector3 origin = Vector3.zero;
+                            origin.x += r * Mathf.Cos(t);
+                            origin.y += r * Mathf.Sin(t);
+                        }
+                        else
+                        {
+                            origin = Vector3.zero;
+                        }
 
-                            if (foliageTool.placementArea != 1)
-                            {
-                                origin.x += r * Mathf.Cos(t);
-                                origin.y += r * Mathf.Sin(t);
-                            }
-                            else
-                            {
-                                origin = Vector3.zero;
-                            }
+                        Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
+                        ray.origin += origin;
 
-                            Ray ray = sceneView.camera.ScreenPointToRay(mousePos);
-                            ray.origin += origin;
+                        RaycastHit hit;
 
-                            RaycastHit hit;
-
-                            if (foliageTool.useLayer)
-                            {
-                                if (Physics.Raycast(ray, out hit, 200f, 1 << foliageTool.editLayerMask))
-                                {
-                                    if (CheckUseMaterial(foliageTool, hit))
-                                    {
-                                        SpawnFoliage(hit);
-
-                                        oldMousePos = e.mousePosition;
-                                    }
-                                }
-                            }
-                            else if (Physics.Raycast(ray, out hit, 200f))
+                        if (foliageTool.useLayer)
+                        {
+                            if (Physics.Raycast(ray, out hit, 200f, 1 << foliageTool.editLayerMask))
                             {
                                 if (CheckUseMaterial(foliageTool, hit))
                                 {
@@ -575,8 +558,17 @@ namespace Quartzified.Editor.WorldEditor
                                     oldMousePos = e.mousePosition;
                                 }
                             }
-
                         }
+                        else if (Physics.Raycast(ray, out hit, 200f))
+                        {
+                            if (CheckUseMaterial(foliageTool, hit))
+                            {
+                                SpawnFoliage(hit);
+
+                                oldMousePos = e.mousePosition;
+                            }
+                        }
+
                         break;
                 }
             }
@@ -584,7 +576,7 @@ namespace Quartzified.Editor.WorldEditor
 
         void SpawnFoliage(RaycastHit hit)
         {
-            GameObject spawnedObj = EditObject.GetSpawnObject(foliageTool, spawnObjects);
+            GameObject spawnedObj = customSpawnables != null ? customSpawnables.GetSpawnable(objectTool.randomObj) : EditObject.GetSpawnObject(foliageTool, spawnObjects);
 
             if (spawnedObj == null)
             {
@@ -684,6 +676,8 @@ namespace Quartzified.Editor.WorldEditor
                 savedLayer = go.layer;
                 go.layer = 2;
 
+                RaycastHit hit;
+
                 if (Physics.Raycast(go.transform.position, -Vector3.up, out hit))
                 {
                     switch (method)
@@ -782,17 +776,30 @@ namespace Quartzified.Editor.WorldEditor
             }
             else
             {
+
                 EditorGUILayout.BeginHorizontal();
+
                 GUIStyle style = new GUIStyle();
-                style.padding = new RectOffset(8, 0, 0, 0);
+                style.padding = new RectOffset(4, 0, 0, 0);
                 style.richText = true;
 
-                EditorGUILayout.LabelField("<color=white>Spawn Object</color>", style, GUILayout.Width(92));
-                spawnObject = (GameObject)EditorGUILayout.ObjectField(spawnObject, type, true);
-                spawnObjects.Clear();
-                objCount = 1;
+                EditorGUILayout.LabelField("<color=gray>Custom List</color>", style, GUILayout.Width(80));
+                customSpawnables = (ScriptableSpawnables)EditorGUILayout.ObjectField(customSpawnables, typeof(ScriptableSpawnables), true);
 
                 EditorGUILayout.EndHorizontal();
+
+
+                if (customSpawnables == null)
+                {
+                    EditorGUILayout.BeginHorizontal();
+
+                    EditorGUILayout.LabelField("<color=white>Spawn Object</color>", style, GUILayout.Width(92));
+                    spawnObject = (GameObject)EditorGUILayout.ObjectField(spawnObject, type, true);
+                    spawnObjects.Clear();
+                    objCount = 1;
+
+                    EditorGUILayout.EndHorizontal();
+                }
             }
         }
         void DrawCustomMaterialList(System.Type type, string title = "Foldout")
