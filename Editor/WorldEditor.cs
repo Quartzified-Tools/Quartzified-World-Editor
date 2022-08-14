@@ -410,25 +410,59 @@ namespace Quartzified.Editor.WorldEditor
                         RaycastHit hitObj;
                         if (Physics.Raycast(rayRemove, out hitObj, 200f))
                         {
-                            foreach (GameObject obj in spawnObjects)
+                            if(customSpawnables != null && customSpawnables.spawnables.Count > 0)
                             {
-                                if (hitObj.transform.name.Equals(obj.name))
+                                foreach (GameObject obj in customSpawnables.spawnables)
                                 {
-                                    Undo.DestroyObjectImmediate(hitObj.transform.gameObject);
-                                    break;
-                                }
-                                else
-                                {
-                                    Transform t = hitObj.transform;
-                                    while (t.parent != null)
+                                    if (hitObj.transform != null && hitObj.transform.name.Equals(obj.name))
                                     {
-                                        if (t.parent.name.Equals(obj.name))
+                                        Undo.DestroyObjectImmediate(hitObj.transform.gameObject);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        Transform t = hitObj.transform;
+                                        if(t != null)
                                         {
-                                            Undo.DestroyObjectImmediate(t.parent.gameObject);
-                                            break;
-                                        }
+                                            while (t.parent != null)
+                                            {
+                                                if (t.parent.name.Equals(obj.name))
+                                                {
+                                                    Undo.DestroyObjectImmediate(t.parent.gameObject);
+                                                    break;
+                                                }
 
-                                        t = t.parent.transform;
+                                                t = t.parent.transform;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (GameObject obj in spawnObjects)
+                                {
+                                    if (hitObj.transform != null && hitObj.transform.name.Equals(obj.name))
+                                    {
+                                        Undo.DestroyObjectImmediate(hitObj.transform.gameObject);
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        Transform t = hitObj.transform;
+                                        if(t != null)
+                                        {
+                                            while (t.parent != null)
+                                            {
+                                                if (t.parent.name.Equals(obj.name))
+                                                {
+                                                    Undo.DestroyObjectImmediate(t.parent.gameObject);
+                                                    break;
+                                                }
+
+                                                t = t.parent.transform;
+                                            }
+                                        }
                                     }
                                 }
                             }
